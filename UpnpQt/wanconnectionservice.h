@@ -51,13 +51,13 @@ public:
      * Adds a port mapping to an internal host, parameters that have a default
      * value are not required.
      * @param externalPort The
-     * @param internalAddress
+     * @param internalAddress format: "x.x.x.x"
      * @param internalPort
      * @param sockType
      * @param description
      * @param enabled
      * @param leaseDuration 0 is the maximum value the router will allow, otherwise the unit is seconds
-     * @param remoteHost
+     * @param remoteHost format: "x.x.x.x"
      * @return when Reply emits finished error must be false
      */
     Reply *addPortMapping(quint16 externalPort,
@@ -77,20 +77,62 @@ public:
                           int leaseDuration = 0,
                           const QHostAddress &remoteHost = QHostAddress());
 
+    /**
+     * @brief deletePortMapping
+     * @param externalPort
+     * @param sockType
+     * @param remoteHost format: "x.x.x.x"
+     * @return
+     */
     Reply *deletePortMapping(quint16 externalPort, QAbstractSocket::SocketType sockType, const QString &remoteHost = QString());
+
+    /**
+     * @brief deletePortMapping Overload with QHostAddress
+     * @param externalPort
+     * @param sockType
+     * @param remoteHost
+     * @return
+     */
     Reply *deletePortMapping(quint16 externalPort, QAbstractSocket::SocketType sockType, const QHostAddress &remoteHost);
 
+    /**
+     * @brief getSpecificPortMappingEntry
+     * @param externalPort
+     * @param sockType
+     * @param remoteHost format: "x.x.x.x"
+     * @return PortMap
+     */
     Reply *getSpecificPortMappingEntry(quint16 externalPort,
                                        QAbstractSocket::SocketType sockType,
                                        const QString &remoteHost = QString());
+
+    /**
+     * @brief getSpecificPortMappingEntry Overload with QHostAddress
+     * @param externalPort
+     * @param sockType
+     * @param remoteHost format: "x.x.x.x"
+     * @return PortMap
+     */
     Reply *getSpecificPortMappingEntry(quint16 externalPort,
                                        QAbstractSocket::SocketType sockType,
                                        const QHostAddress &remoteHost);
 
+    /**
+     * @brief getGenericPortMapping
+     * @return std::vector<PortMap> with all port maps
+     */
     Reply *getGenericPortMapping();
 
+    /**
+     * @brief getStatusInfo
+     * @return QVariantHash with parsed info
+     */
     Reply *getStatusInfo();
 
+    /**
+     * @brief getExternalIp
+     * @return QString with external IP
+     */
     Reply *getExternalIp();
 
 private:

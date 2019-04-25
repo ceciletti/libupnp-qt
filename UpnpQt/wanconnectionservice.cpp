@@ -209,7 +209,17 @@ Reply *WanConnectionService::getStatusInfo()
             auto error = SoapEnvelope::responseError(data);
             ret->finishWithError(error.second, error.first);
         } else {
-            ret->finish();
+            QDomDocument doc;
+            doc.setContent(data, true);
+            const QDomElement res = doc
+                    .documentElement()
+                    .firstChildElement(QStringLiteral("Body"))
+                    .firstChildElement(QStringLiteral("GetStatusInfoResponse"));
+            ret->finishWithData(QVariantHash{
+                                    {QStringLiteral("ConnectionStatus"), res.firstChildElement(QStringLiteral("NewConnectionStatus")).text()},
+                                    {QStringLiteral("LastConnectionError"), res.firstChildElement(QStringLiteral("NewLastConnectionError")).text()},
+                                    {QStringLiteral("Uptime"), res.firstChildElement(QStringLiteral("NewUptime")).text()},
+                                });
         }
     });
 
