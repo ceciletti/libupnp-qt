@@ -1,0 +1,15 @@
+get_filename_component(UpnpQt_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+include(CMakeFindDependencyMacro)
+
+list(APPEND CMAKE_MODULE_PATH ${UpnpQt_CMAKE_DIR})
+
+# NOTE Had to use find_package because find_dependency does not support COMPONENTS or MODULE until 3.8.0
+
+find_package(Qt5 REQUIRED COMPONENTS Core Network)
+list(REMOVE_AT CMAKE_MODULE_PATH -1)
+
+if(NOT TARGET UpnpQt::UpnpQt)
+    include("${UpnpQt_CMAKE_DIR}/UpnpQtTargets.cmake")
+endif()
+
+set(UpnpQt_LIBRARIES UpnpQt::UpnpQt)

@@ -1,0 +1,40 @@
+cmake_minimum_required(VERSION 3.5)
+project(libupnp-qt VERSION 0.1.0 LANGUAGES CXX)
+
+set(CMAKE_AUTOMOC ON)
+
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
+
+# As moc files are generated in the binary dir, tell CMake
+# to always look for includes there:
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+option(BUILD_SHARED_LIBS "Build in shared lib mode" ON)
+
+find_package(Qt5 REQUIRED COMPONENTS Core Network Xml)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_definitions(
+    -DQT_NO_KEYWORDS
+    -DQT_NO_CAST_TO_ASCII
+    -DQT_NO_CAST_FROM_ASCII
+    -DQT_STRICT_ITERATORS
+    -DQT_NO_URL_CAST_FROM_STRING
+    -DQT_NO_CAST_FROM_BYTEARRAY
+    -DQT_USE_QSTRINGBUILDER
+    -DQT_NO_SIGNALS_SLOTS_KEYWORDS
+    -DQT_USE_FAST_OPERATOR_PLUS
+    -DQT_DISABLE_DEPRECATED_BEFORE=0x050c00
+)
+
+include_directories(
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/UpnpQt
+    ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+add_subdirectory(UpnpQt)
