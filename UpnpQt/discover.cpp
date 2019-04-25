@@ -113,7 +113,7 @@ QNetworkAccessManager *Discover::nam() const
     return  d->nam;
 }
 
-void Discover::discover()
+void Discover::discoverInternetGatewayDevice()
 {
     Q_D(Discover);
 

@@ -39,7 +39,7 @@ public:
     QNetworkAccessManager *nam() const;
 
 public Q_SLOTS:
-    void discover();
+    void discoverInternetGatewayDevice();
 
 Q_SIGNALS:
     void discovered(Device *device);
