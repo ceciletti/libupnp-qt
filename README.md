@@ -13,7 +13,7 @@ Simple UPnP library based on Qt
 
 ``` cpp
 auto s = new Discover;
-s->discover();
+s->discoverInternetGatewayDevice();
 connect(s, &Discover::discovered, this, [=] (Device *device) {
     auto idg = qobject_cast<InternetGatewayDevice*>(device);
     if (idg) {
