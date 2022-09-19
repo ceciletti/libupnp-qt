@@ -33,10 +33,10 @@ add_library(UpnpQt::Core ALIAS UpnpQt)
 #Set target properties
 target_include_directories(UpnpQt
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../>
         $<INSTALL_INTERFACE:include/upnp-qt5>
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_BINARY_DIR}
 )
 
 target_compile_features(UpnpQt PRIVATE cxx_auto_type)
@@ -91,7 +91,7 @@ write_basic_package_version_file(
     COMPATIBILITY AnyNewerVersion
 )
 
-configure_package_config_file(${CMAKE_SOURCE_DIR}/cmake/UpnpQtConfig.cmake.in
+configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/UpnpQtConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/UpnpQtConfig.cmake
     INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
 )
