@@ -42,15 +42,17 @@ class DiscoverPrivate : public QObject
     Q_OBJECT
     Q_DECLARE_PUBLIC(Discover)
 public:
-    DiscoverPrivate(Discover *q) : q_ptr(q) {}
+    DiscoverPrivate(Discover *q)
+        : q_ptr(q),
+          groupAddress(QStringLiteral("239.255.255.250"))
+    {}
 
-    void joinUPnPMGroup(int fd);
-    void leaveUPnPMGroup(int fd);
     void parse(const QByteArray &data, Discover *parent);
 
     Discover *q_ptr;
     QNetworkAccessManager *nam;
-    QUdpSocket udpSocket;
+    QUdpSocket udpSocket4;
+    QHostAddress groupAddress;
 };
 
 }
@@ -62,21 +64,21 @@ Discover::Discover(QObject *parent) : QObject(parent)
 {
     Q_D(Discover);
     d->nam = new QNetworkAccessManager(this);
-    connect(&d->udpSocket, &QUdpSocket::readyRead, this, [=] {
-        const qint64 pendingDatagramSize = d->udpSocket.pendingDatagramSize();
+    connect(&d->udpSocket4, &QUdpSocket::readyRead, this, [=] {
+        const qint64 pendingDatagramSize = d->udpSocket4.pendingDatagramSize();
         if (pendingDatagramSize == 0) {
             qCDebug(UPNPQT_DISCOVER) << "0 byte UDP packet ";
             // TODO validate this
             // KDatagramSocket wrongly handles UDP packets with no payload
             // so we need to deal with it oursleves
-            int fd = int(d->udpSocket.socketDescriptor());
+            int fd = int(d->udpSocket4.socketDescriptor());
             char tmp;
             ::read(fd, &tmp, 1);
             return;
         }
 
         QByteArray data(int(pendingDatagramSize), 0);
-        if (d->udpSocket.readDatagram(data.data(), pendingDatagramSize) == -1) {
+        if (d->udpSocket4.readDatagram(data.data(), pendingDatagramSize) == -1) {
             return;
         }
 
@@ -84,26 +86,25 @@ Discover::Discover(QObject *parent) : QObject(parent)
 
         d->parse(data, this);
     });
-    connect(&d->udpSocket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),
+    connect(&d->udpSocket4, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),
             [=](QAbstractSocket::SocketError socketError){
-        qCWarning(UPNPQT_DISCOVER) << "Socket Error " << socketError << d->udpSocket.errorString();
+        qCWarning(UPNPQT_DISCOVER) << "Socket Error " << socketError << d->udpSocket4.errorString();
     });
 
     for (quint16 i = 1900; i < 1910; ++i) {
-        if (!d->udpSocket.bind(i, QUdpSocket::ShareAddress)) {
-            qCWarning(UPNPQT_DISCOVER) << "Cannot bind to UDP port" << i << d->udpSocket.errorString();
+        if (!d->udpSocket4.bind(QHostAddress::AnyIPv4, i, QUdpSocket::ShareAddress)) {
+            qCWarning(UPNPQT_DISCOVER) << "Cannot bind to UDP port" << i << d->udpSocket4.errorString();
         } else {
             qCInfo(UPNPQT_DISCOVER) << "Bound to UDP port" << i;
+            d->udpSocket4.joinMulticastGroup(d->groupAddress);
             break;
         }
     }
-
-    d->joinUPnPMGroup(int(d->udpSocket.socketDescriptor()));
 }
 
 Discover::~Discover()
 {
-    d_ptr->leaveUPnPMGroup(int(d_ptr->udpSocket.socketDescriptor()));
+    d_ptr->udpSocket4.leaveMulticastGroup(d_ptr->groupAddress);
     delete d_ptr;
 }
 
@@ -137,44 +138,8 @@ void Discover::discoverInternetGatewayDevice()
     qCDebug(UPNPQT_DISCOVER) << "Sending" << upnp_data;
     qCDebug(UPNPQT_DISCOVER) << "Sending" << tr64_data;
 
-    d->udpSocket.writeDatagram(upnp_data, qstrlen(upnp_data), QHostAddress(QStringLiteral("239.255.255.250")), 1900);
-    d->udpSocket.writeDatagram(tr64_data, qstrlen(tr64_data), QHostAddress(QStringLiteral("239.255.255.250")), 1900);
-}
-
-void DiscoverPrivate::joinUPnPMGroup(int fd)
-{
-    struct ip_mreq mreq;
-    memset(&mreq,0,sizeof(struct ip_mreq));
-
-    inet_aton("239.255.255.250",&mreq.imr_multiaddr);
-    mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-
-#ifndef Q_WS_WIN
-    if (setsockopt(fd,IPPROTO_IP,IP_ADD_MEMBERSHIP,&mreq,sizeof(struct ip_mreq)) < 0)
-#else
-    if (setsockopt(fd,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&mreq,sizeof(struct ip_mreq)) < 0)
-#endif
-    {
-        qCWarning(UPNPQT_DISCOVER) << "Failed to join multicast group 239.255.255.250";
-    }
-}
-
-void DiscoverPrivate::leaveUPnPMGroup(int fd)
-{
-    struct ip_mreq mreq;
-    memset(&mreq,0,sizeof(struct ip_mreq));
-
-    inet_aton("239.255.255.250",&mreq.imr_multiaddr);
-    mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-
-#ifndef Q_WS_WIN
-    if (setsockopt(fd,IPPROTO_IP,IP_DROP_MEMBERSHIP,&mreq,sizeof(struct ip_mreq)) < 0)
-#else
-    if (setsockopt(fd,IPPROTO_IP,IP_DROP_MEMBERSHIP,(char *)&mreq,sizeof(struct ip_mreq)) < 0)
-#endif
-    {
-        qCWarning(UPNPQT_DISCOVER) << "Failed to leave multicast group 239.255.255.250";
-    }
+    d->udpSocket4.writeDatagram(upnp_data, qstrlen(upnp_data), d->groupAddress, 1900);
+    d->udpSocket4.writeDatagram(tr64_data, qstrlen(tr64_data), d->groupAddress, 1900);
 }
 
 void DiscoverPrivate::parse(const QByteArray &data, Discover *parent)
